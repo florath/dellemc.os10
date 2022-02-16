@@ -137,5 +137,5 @@ When `os10_cfg_generate` is set to true, the variable generates the configuratio
 
     ansible-playbook -i hosts leaf.yaml
 
-(c) 2017-2020 Dell Inc. or its subsidiaries. All rights reserved.
+(c) 2017-2020 Dell Inc. or its subsidiaries. All rights reserved.\
 (c) Copyright 2022 Andreas Florath, Deutsche Telekom AG
