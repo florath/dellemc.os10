@@ -105,7 +105,7 @@ When `os10_cfg_generate` is set to true, the variable generates the configuratio
 
       source:
         ipv4: 10.0.0.1
-  	ipv6: fe80::1
+        ipv6: fe80::1
 
       # Set system time using PTP
       system_time: true
