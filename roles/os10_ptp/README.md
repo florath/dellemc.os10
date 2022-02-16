@@ -1,7 +1,7 @@
 PTP role
 ========
 
-This role facilitates configuring Precision Time Protocol (PTP) attributes. It supports setting up the general configuration and the definition of master and client interfaces.the creation and deletion of a VLAN and its member ports. This role is abstracted for Dell EMC PowerSwitch platforms running Dell EMC SmartFabric OS10.
+This role facilitates configuring Precision Time Protocol (PTP) attributes. It supports setting up the general configuration and the definition of master and client interfaces. This role is abstracted for Dell EMC PowerSwitch platforms running Dell EMC SmartFabric OS10.
 
 **Currently only the basic configuration parameters on the interface level are implemented.**
 
@@ -23,10 +23,10 @@ Role variables
 |------------|---------------------------|---------------------------------------------------------|-----------------------|
 | ``clock`` | string | Type of the clock. Either 'boundary' or 'end-to-end-transparent'   | os10 |
 | ``domain`` | integer | Domain ID | os10 |
-| ``local_priority`` | integer | Local priority for g8275.[12] profiles | os10 |
-| ``priority1`` | integer | priority1 attribute | os10 |
-| ``priority2`` | integer | priority2 attribute | os10 |
-| ``system_time`` | bool | Use PTP time to set local system time | os10 |
+| ``local_priority`` | integer | Local priority for g8275.[12] profiles [default: 128] | os10 |
+| ``priority1`` | integer | priority1 attribute [default: 128] | os10 |
+| ``priority2`` | integer | priority2 attribute [default: 128] | os10 |
+| ``system_time`` | bool | Use PTP time to set local system time [true, false] | os10 |
 
 **boundary**
 
@@ -44,9 +44,13 @@ This dictionary must be defined in the case if clock is set to 'boundary'.
 | ``ipv4`` | string | IPv4 source address   | os10 |
 | ``ipv6`` | string | IPv6 source address | os10 |
 
-XXX Continue here.
-                                                                                                      
-> **NOTE**: Asterisk (\*) denotes the default value if none is specified.
+**interfaces**
+
+A dictionary of PTP interface descriptions where the key is the name of the interface.
+
+| Key        | Type                      | Notes                                                   | Support               |
+|------------|---------------------------|---------------------------------------------------------|-----------------------|
+| ``role`` | string | Role of the interface. Either 'master' or 'slave'   | os10 |
 
 Connection variables
 --------------------
@@ -69,9 +73,9 @@ Ansible Dell EMC network roles require connection information to establish commu
 
 ## Example playbook
 
-This example uses the *os10_vlan* role to setup the VLAN ID and name, and it configures tagged and untagged port members for the VLAN. You can also delete the VLAN with the ID or delete the members associated to it. It creates a *hosts* file with the switch details and corresponding variables. The hosts file should define the `ansible_network_os` variable with corresponding Dell EMC OS10 name. 
+This example uses the *os10_ptp* role to setup the ptp clock and define one master and one slave interface. It creates a *hosts* file with the switch details and corresponding variables. The hosts file should define the `ansible_network_os` variable with corresponding Dell EMC OS10 name. 
 
-When `os10_cfg_generate` is set to true, the variable generates the configuration commands as a .part file in *build_dir* path. By default, the variable is set to false. It writes a simple playbook that only references the *os10_vlan* role.
+When `os10_cfg_generate` is set to true, the variable generates the configuration commands as a .part file in *build_dir* path. By default, the variable is set to false. It writes a simple playbook that only references the *os10_ptp* role.
 
 **Sample hosts file**
 
@@ -88,33 +92,38 @@ When `os10_cfg_generate` is set to true, the variable generates the configuratio
     ansible_network_os: dellemc.os10.os10
     build_dir: ../temp/temp_os10
 
-    os10_vlan:
-        default_vlan_id: 2
-        vlan 100:
-          description: "Blue"
-          tagged_members:
-              - port: ethernet 1/1/32
-                state: present
-              - port: ethernet 1/1/31
-                state: present
-          untagged_members:
-              - port: ethernet 1/1/30
-                state: present
-              - port: ethernet 1/1/29
-                state: present
-          state: present
-        vlan 888:
-          description: "NSX_Cluster"
-          untagged_members:
-            - port: port-channel 1
-              state: "present"
-          state: "present"
-        vlan 10:
-          description: "vlan with anycast GW"
-          ip_and_mask: "10.1.1.1/24"
-          virtual_gateway_ip: "10.1.1.254"
-          virtual_gateway_ipv6: "10:1:1::254"
-          state: "present"
+    os10_ptp:
+
+      # boundary or end-to-end-transparent
+      clock: boundary
+
+      domain: 24
+
+      local_priority: 129
+      priority1: 129
+      priority2: 135
+
+      source:
+        ipv4: 10.0.0.1
+  	ipv6: fe80::1
+
+      # Set system time using PTP
+      system_time: true
+
+      # This must be specified if clock is boundary
+      boundary:
+        # Enable also SyncE
+        hybrid: true
+        # g8275.2, g8275.1 or system-default
+        profile: g8275.1
+  
+      interfaces:
+
+        ethernet 1/1/7:
+          role: slave
+
+        ethernet 1/1/9:
+          role: master
 
 > **NOTE**: Interfaces should be created using the *os10_interface* role.
 
@@ -122,10 +131,11 @@ When `os10_cfg_generate` is set to true, the variable generates the configuratio
 
     - hosts: leaf1
       roles:
-         - dellemc.os10.os10_vlan
+         - dellemc.os10.os10_ptp
                 
 **Run**
 
     ansible-playbook -i hosts leaf.yaml
 
 (c) 2017-2020 Dell Inc. or its subsidiaries. All rights reserved.
+(c) Copyright 2022 Andreas Florath, Deutsche Telekom AG
