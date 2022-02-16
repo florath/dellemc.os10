@@ -3,7 +3,7 @@ PTP role
 
 This role facilitates configuring Precision Time Protocol (PTP) attributes. It supports setting up the general configuration and the definition of master and client interfaces. This role is abstracted for Dell EMC PowerSwitch platforms running Dell EMC SmartFabric OS10.
 
-**Currently only the basic configuration parameters on the interface level are implemented.**
+Limitation: Currently only basic configuration parameters on the interface level are implemented. But the role is fully usable especially for G8275.1 profile.
 
 The PTP role requires an SSH connection for connectivity to a Dell EMC SmartFabric OS10 device. You can use any of the built-in OS connection variables.
 
